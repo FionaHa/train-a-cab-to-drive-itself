@@ -23,7 +23,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Set any additional class parameters as needed
-        self.gamma = 1
+        self.trial = 0
 
     def reset(self, destination=None, testing=False):
         """ The reset function is called at the beginning of each trial.
@@ -37,13 +37,15 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Update additional class parameters as needed
+        # Update epsilon using a decay function of your choice
+        
+        self.epsilon -= self.trial * 0.005
+        self.trial = 1
+        
         # If 'testing' is True, set epsilon and alpha to 0
-        if testing == True:
+        if testing:
             self.epsilon = 0
             self.alpha = 0
-        
-        # Update epsilon using a decay function of your choice
-        self.epsilon = self.epsilon - 0.05
         
         return
 
@@ -67,8 +69,8 @@ class LearningAgent(Agent):
         # With the hand-engineered features, this learning process gets entirely negated.
         
         # Set 'state' as a tuple of relevant data for the agent        
-        state = (waypoint, inputs)
-
+        state = (waypoint, inputs['light'], inputs['oncoming'], inputs['left'])
+        
         return state
 
 
@@ -80,6 +82,7 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Calculate the maximum Q-value of all actions for a given state
+        
         for key_state in self.Q.keys():
             if key_state == state:
                 maxQ = max(self.Q[key_state].values())
@@ -95,12 +98,11 @@ class LearningAgent(Agent):
         ###########
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
-        #   Then, for each action available, set the initial Q-value to 0.0
+        # Then, for each action available, set the initial Q-value to 0.0
      
-        if self.learning==True:
-            #if state in self.Q.keys() == False:
-            self.Q[state] = {None:0.0, 'left':0.0, 'right':0.0, 'forward':0.0}
-
+        if self.learning and self.Q.get(state) == None:
+            self.Q[state] = {None:0.0, 'left':0.0, 'right':0.0, 'forward':0.0}                            
+        
         return
 
 
@@ -112,7 +114,7 @@ class LearningAgent(Agent):
         self.state = state
         self.next_waypoint = self.planner.next_waypoint()
         action = random.choice(self.valid_actions)
-
+            
         ########### 
         ## TO DO ##
         ###########
@@ -148,9 +150,8 @@ class LearningAgent(Agent):
                 if key_state == state:
                     for key_action in self.Q[state].keys():
                         if key_action == action:
-                            self.Q[state][action] = self.Q[state][action] + \
-                            alpha * (reward + self.gamma * self.get_maxQ(state) - self.Q[state][action]) 
-        
+                            self.Q[state][action] = (1- self.alpha) * self.Q[state][action] + self.alpha * reward  
+                
         return
 
 
@@ -178,7 +179,7 @@ def run():
     #   verbose     - set to True to display additional output from the simulation
     #   num_dummies - discrete number of dummy agents in the environment, default is 100
     #   grid_size   - discrete number of intersections (columns, rows), default is (8, 6)
-    env = Environment(verbose=True)
+    env = Environment()
     
     ##############
     # Create the driving agent
@@ -202,7 +203,7 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
-    sim = Simulator(env,update_delay=0.01,log_metrics=True)
+    sim = Simulator(env,update_delay=0.01,log_metrics=True,optimized=True)
     
     ##############
     # Run the simulator
@@ -210,7 +211,7 @@ def run():
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
     sim.run(n_test=10)
-
+    
 
 if __name__ == '__main__':
     run()
