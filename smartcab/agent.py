@@ -125,14 +125,9 @@ class LearningAgent(Agent):
         if self.learning==False or random.uniform(0,1) <= self.epsilon:
             action
         else:  
-            max_actions = []
-            for key_state in self.Q.keys():
-                if key_state == state:
-                    for action, q in self.Q[state].iteritems():
-                        if q == self.get_maxQ(state):
-                            max_actions.append(action)
+            max_actions = [action for action in self.valid_actions if self.Q[state][action] == self.get_maxQ(state)]
             action = random.choice(max_actions)
-            
+        
         return action
 
 
@@ -146,11 +141,9 @@ class LearningAgent(Agent):
         ###########
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
-        for key_state in self.Q.keys():
-                if key_state == state:
-                    for key_action in self.Q[state].keys():
-                        if key_action == action:
-                            self.Q[state][action] = (1- self.alpha) * self.Q[state][action] + self.alpha * reward  
+        
+        if self.learning:
+            self.Q[state][action] = (1- self.alpha) * self.Q[state][action] + self.alpha * reward  
                 
         return
 
@@ -210,7 +203,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test=10)
+    sim.run(n_test=100)
     
 
 if __name__ == '__main__':
